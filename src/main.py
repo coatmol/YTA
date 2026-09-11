@@ -1,12 +1,15 @@
 import dotenv
-dotenv.load_dotenv()
+import warnings
+import logging
 
+warnings.filterwarnings("ignore")
+logging.getLogger().setLevel(logging.ERROR)
+
+dotenv.load_dotenv()
 from yta import *
 
 
 def main():
-    print("Hello, World!")
-
     story = reddit.get_story()
     if story is None:
         print("No story found.")

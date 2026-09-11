@@ -19,5 +19,6 @@ def get_story():
         print(f"Score: {submission.score}")
         print(f"URL: {submission.url}")
         print(f"Selftext: {submission.selftext}")
+        print("-" * 40)
 
         return submission.title, submission.selftext
