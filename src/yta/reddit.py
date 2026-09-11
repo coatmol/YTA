@@ -5,9 +5,9 @@ import praw
 # Get a AITA post from Reddit
 def get_story():
     reddit = praw.Reddit(
-        client_id=os.getenv("PRAW_CLIENT_ID"),
-        client_secret=os.getenv("PRAW_SECRET"),
-        user_agent=f"script:context:v1.0 (by /u/{os.getenv('PRAW_USERNAME')})",
+        client_id=os.getenv("PRAW_CLIENT_ID", ""),
+        client_secret=os.getenv("PRAW_SECRET", ""),
+        user_agent=f"script:context:v1.0 (by /u/{os.getenv('PRAW_USERNAME', '')})",
     )
 
     # Select target subreddit

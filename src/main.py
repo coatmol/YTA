@@ -19,6 +19,8 @@ def main():
     formatted_script = inference.format_script_for_shorts(title, body)
 
     print(formatted_script)
+    print("\nGenerating Voiceover...")
+    tts.create_tts(formatted_script)
 
 
 if __name__ == "__main__":

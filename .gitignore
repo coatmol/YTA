@@ -10,3 +10,8 @@ wheels/
 # Virtual environments
 .venv
 .env
+
+# Other files
+*.mp3
+*.json
+output/
