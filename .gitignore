@@ -14,4 +14,7 @@ wheels/
 # Other files
 *.mp3
 *.json
+
+# Directories
 output/
+input/

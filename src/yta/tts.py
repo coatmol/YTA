@@ -2,11 +2,13 @@ import asyncio
 import json
 import edge_tts
 
-AUDIO_OUTPUT = "voiceover.mp3"
-JSON_OUTPUT = "word_timestamps.json"
+AUDIO_OUTPUT = "output/voiceover.mp3"
+JSON_OUTPUT = "output/word_timestamps.json"
 
 
-async def generate_audio_and_timestamps(text: str, voice: str, audio_path: str, json_path: str):
+async def generate_audio_and_timestamps(
+    text: str, voice: str, audio_path: str, json_path: str
+):
     """Streams edge-tts audio to MP3 and saves word-level timestamp offsets."""
     # Setting boundary="WordBoundary" emits word-level timing metadata
     communicate = edge_tts.Communicate(
@@ -14,6 +16,12 @@ async def generate_audio_and_timestamps(text: str, voice: str, audio_path: str, 
     )
 
     word_events = []
+
+    # Ensure output directories exist
+    import os
+    os.makedirs(os.path.dirname(audio_path), exist_ok=True)
+    if os.path.dirname(json_path):
+        os.makedirs(os.path.dirname(json_path), exist_ok=True)
 
     with open(audio_path, "wb") as f_audio:
         async for chunk in communicate.stream():
@@ -53,6 +61,11 @@ async def generate_audio_and_timestamps(text: str, voice: str, audio_path: str, 
     print(f"Saved {len(word_events)} word timestamps to {json_path}")
 
 
-def create_tts(text: str, voice: str = "en-US-AndrewNeural", audio_path: str = AUDIO_OUTPUT, json_path: str = JSON_OUTPUT):
+def create_tts(
+    text: str,
+    voice: str = "en-US-AndrewNeural",
+    audio_path: str = AUDIO_OUTPUT,
+    json_path: str = JSON_OUTPUT,
+):
     """Synchronous wrapper to generate audio and timestamps."""
     asyncio.run(generate_audio_and_timestamps(text, voice, audio_path, json_path))

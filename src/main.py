@@ -1,6 +1,7 @@
 import dotenv
 import warnings
 import logging
+import argparse
 
 warnings.filterwarnings("ignore")
 logging.getLogger().setLevel(logging.ERROR)
@@ -10,6 +11,11 @@ from yta import *
 
 
 def main():
+    parser = argparse.ArgumentParser(description="YTA - Reddit Shorts Generator")
+    parser.add_argument("--video", "-v", type=str, help="Path to input background video (MP4)")
+    parser.add_argument("--bgm", "-b", type=str, help="Path to background music audio (MP3/WAV)")
+    args = parser.parse_args()
+
     story = reddit.get_story()
     if story is None:
         print("No story found.")
@@ -20,9 +26,18 @@ def main():
 
     print(f"[{gender.upper()}] {formatted_script}")
     print("\nGenerating Voiceover...")
-    
+
     voice = "en-US-JennyNeural" if gender == "female" else "en-US-AndrewNeural"
     tts.create_tts(formatted_script, voice=voice)
+
+    if args.video:
+        print("\nProcessing Video...")
+        video.create_short_video(
+            input_video_path=args.video,
+            audio_path=tts.AUDIO_OUTPUT,
+            bgm_path=args.bgm,
+            output_path="output/final_short.mp4",
+        )
 
 
 if __name__ == "__main__":
