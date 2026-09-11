@@ -1,12 +1,14 @@
 import os
+import json
 from google import genai
+from google.genai import types
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 client = genai.Client(api_key=GEMINI_API_KEY)
 model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
 
 
-def format_script_for_shorts(title, body):
+def format_script_for_shorts(title, body) -> tuple[str, str]:
     """Pass Reddit text to Gemini to clean and reformat for TTS & YouTube Shorts."""
     prompt = f"""
     You are a viral YouTube Shorts scriptwriter. 
@@ -18,7 +20,7 @@ def format_script_for_shorts(title, body):
     3. Strip all URLs, markdown formatting, "EDIT:" sections, and "TL;DR" tags.
     4. Censor explicit words to prevent YouTube monetization bans (e.g., replace heavy curses with mild alternatives).
     5. Hook (First 3 seconds): Start immediately with an urgent, dramatic statement or question. Never say "Reddit post" or "Today on AskReddit".
-    6. Output ONLY the raw spoken script. Do NOT include scene notes, section labels like "[Hook:]", or brackets.
+    6. Do not include scene notes, section labels like "[Hook:]", or brackets in the script.
 
     REDDIT TITLE:
     {title}
@@ -31,11 +33,23 @@ def format_script_for_shorts(title, body):
         response = client.models.generate_content(
             model=model,
             contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema={
+                    "type": "OBJECT",
+                    "properties": {
+                        "script": {"type": "STRING"},
+                        "gender": {"type": "STRING", "enum": ["male", "female", "unknown"]}
+                    },
+                    "required": ["script", "gender"]
+                }
+            )
         )
 
         if not response or not response.text:
             raise Exception("Gemini API returned an empty response.")
+        
+        data = json.loads(response.text)
+        return data["script"].strip(), data["gender"]
     except Exception as e:
         raise Exception(f"Gemini API request failed: {e}")
-
-    return response.text.strip()

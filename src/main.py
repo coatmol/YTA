@@ -16,11 +16,13 @@ def main():
         return
 
     title, body = story
-    formatted_script = inference.format_script_for_shorts(title, body)
+    formatted_script, gender = inference.format_script_for_shorts(title, body)
 
-    print(formatted_script)
+    print(f"[{gender.upper()}] {formatted_script}")
     print("\nGenerating Voiceover...")
-    tts.create_tts(formatted_script)
+    
+    voice = "en-US-JennyNeural" if gender == "female" else "en-US-AndrewNeural"
+    tts.create_tts(formatted_script, voice=voice)
 
 
 if __name__ == "__main__":
