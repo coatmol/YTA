@@ -3,7 +3,7 @@ import praw
 
 
 # Get a AITA post from Reddit
-def get_aita():
+def get_story():
     reddit = praw.Reddit(
         client_id=os.getenv("PRAW_CLIENT_ID"),
         client_secret=os.getenv("PRAW_SECRET"),
@@ -20,4 +20,4 @@ def get_aita():
         print(f"URL: {submission.url}")
         print(f"Selftext: {submission.selftext}")
 
-        return submission.selftext
+        return submission.title, submission.selftext
