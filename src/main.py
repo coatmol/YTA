@@ -20,13 +20,25 @@ def main():
     parser.add_argument(
         "--bgm", "-b", type=str, help="Path to background music audio (MP3/WAV)"
     )
+    parser.add_argument(
+        "--post",
+        "-p",
+        type=str,
+        help="Specific Reddit post ID to fetch (skips daily top search)",
+    )
+    parser.add_argument(
+        "--subreddit",
+        "-r",
+        type=str,
+        help="Specific Reddit subreddit to fetch posts from",
+    )
     args = parser.parse_args()
 
     if not args.video:
         parser.print_help()
         return
 
-    story = reddit.get_story()
+    story = reddit.get_story(post_id=args.post, subreddit_name=args.subreddit)
     if story is None:
         print("No story found.")
         return

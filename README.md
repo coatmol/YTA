@@ -45,8 +45,21 @@ You can run the script using `uv`. You must provide a background video (like Min
 uv run src/main.py --video path/to/background_video.mp4 --bgm path/to/background_music.mp3
 ```
 
+You can specify a specific subreddit to search from (Defaults to r/AmITheAsshole)
+
+```sh
+uv run src/main.py --video path/to/video.mp4 --subreddit AmITheAsshole
+```
+
+You can also specify a direct Reddit post ID to bypass the automated "top of the day" search:
+
+```sh
+uv run src/main.py --video path/to/video.mp4 --post 1b2c3d4
+```
+
 **How it works:**
-1. Authenticates with Reddit and fetches the top post.
+
+1. Authenticates with Reddit and fetches the top post (or a specific post if `--post` is provided).
 2. Uses **Gemini** to rewrite and optimize the Reddit post into a viral, high-retention 40-second script, automatically detecting the narrator's gender.
 3. Uses **Edge TTS** to generate a natural-sounding AI voiceover.
 4. Generates word-by-word **ASS subtitles** featuring dynamic highlights.
