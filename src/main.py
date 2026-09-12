@@ -22,7 +22,7 @@ def main():
     )
     args = parser.parse_args()
 
-    if args._get_args() == []:
+    if not args.video:
         parser.print_help()
         return
 
@@ -40,12 +40,17 @@ def main():
     voice = "en-US-JennyNeural" if gender == "female" else "en-US-AndrewNeural"
     tts.create_tts(formatted_script, voice=voice)
 
+    print("\nGenerating Subtitles...")
+    sub_path = "output/subtitles.ass"
+    subtitles.generate_ass(tts.JSON_OUTPUT, sub_path)
+
     if args.video:
         print("\nProcessing Video...")
         video.create_short_video(
             input_video_path=args.video,
             audio_path=tts.AUDIO_OUTPUT,
             bgm_path=args.bgm,
+            subtitles_path=sub_path,
             output_path="output/final_short.mp4",
         )
 
