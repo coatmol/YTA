@@ -1,6 +1,8 @@
 import subprocess
 import os
 
+BGM_VOLUME = 0.1  # Volume for background music (10% of original volume)
+
 
 def create_short_video(
     input_video_path: str,
@@ -41,7 +43,7 @@ def create_short_video(
         # normalize=0 ensures the TTS volume doesn't get quieted by the mixer.
         filter_complex = (
             "[0:v]crop=ih*(9/16):ih[v];"
-            "[2:a]volume=0.1[bgm];"
+            f"[2:a]volume={BGM_VOLUME}[bgm];"
             "[1:a][bgm]amix=inputs=2:duration=first:normalize=0[a]"
         )
         cmd.extend(

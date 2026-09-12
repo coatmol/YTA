@@ -11,10 +11,20 @@ from yta import *
 
 
 def main():
-    parser = argparse.ArgumentParser(description="YTA - Reddit Shorts Generator")
-    parser.add_argument("--video", "-v", type=str, help="Path to input background video (MP4)")
-    parser.add_argument("--bgm", "-b", type=str, help="Path to background music audio (MP3/WAV)")
+    parser = argparse.ArgumentParser(
+        description="YTA - Youtube Shorts Text-to-Video Automation"
+    )
+    parser.add_argument(
+        "--video", "-v", type=str, help="Path to input background video (MP4)"
+    )
+    parser.add_argument(
+        "--bgm", "-b", type=str, help="Path to background music audio (MP3/WAV)"
+    )
     args = parser.parse_args()
+
+    if args._get_args() == []:
+        parser.print_help()
+        return
 
     story = reddit.get_story()
     if story is None:
