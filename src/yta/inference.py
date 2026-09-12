@@ -8,14 +8,14 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
 
 
-def format_script_for_shorts(title, body) -> tuple[str, str]:
+def format_script_for_shorts(title, body, target_words=200) -> tuple[str, str]:
     """Pass Reddit text to Gemini to clean and reformat for TTS & YouTube Shorts."""
     prompt = f"""
     You are a viral YouTube Shorts scriptwriter. 
-    Rewrite the following Reddit post into a high-retention 40-second script optimized for Text-to-Speech (TTS).
+    Rewrite the following Reddit post into a high-retention script optimized for Text-to-Speech (TTS).
 
     STRICT RULES:
-    1. Target length: around 200 words. Make it detailed, dramatic, and engaging.
+    1. Target length: around {target_words} words. Make it detailed, dramatic, and engaging.
     2. Expand all Reddit acronyms (e.g., AITA -> "Am I the asshole", 26M -> "26-year-old male").
     3. Strip all URLs, markdown formatting, "EDIT:" sections, and "TL;DR" tags.
     4. Censor explicit words to prevent YouTube monetization bans (e.g., replace heavy curses with mild alternatives).

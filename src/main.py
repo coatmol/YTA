@@ -32,19 +32,40 @@ def main():
         type=str,
         help="Specific Reddit subreddit to fetch posts from",
     )
+    parser.add_argument(
+        "--text",
+        "-t",
+        type=str,
+        help="Specific text file to use for the video instead of fetching from Reddit (First line is title, rest is body)",
+    )
+    parser.add_argument(
+        "--words",
+        "-w",
+        type=int,
+        default=200,
+        help="Target word count for the video script (default: 200)",
+    )
     args = parser.parse_args()
 
     if not args.video:
         parser.print_help()
         return
 
-    story = reddit.get_story(post_id=args.post, subreddit_name=args.subreddit)
-    if story is None:
-        print("No story found.")
-        return
+    if args.text:
+        with open(args.text, "r", encoding="utf-8") as f:
+            title = f.readline().strip()
+            body = f.read().strip()
+    else:
+        story = reddit.get_story(post_id=args.post, subreddit_name=args.subreddit)
+        if story is None:
+            print("No story found.")
+            return
 
-    title, body = story
-    formatted_script, gender = inference.format_script_for_shorts(title, body)
+        title, body = story
+
+    formatted_script, gender = inference.format_script_for_shorts(
+        title, body, target_words=args.words
+    )
 
     print(f"[{gender.upper()}] {formatted_script}")
     print("\nGenerating Voiceover...")
