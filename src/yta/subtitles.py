@@ -73,6 +73,20 @@ def generate_ass(word_timestamps_path: str, output_ass_path: str):
         else:
             current_width += space_width + w_width
 
+        # Break chunk immediately if the word ends with punctuation (ignoring trailing quotes)
+        has_punct = False
+        for char in reversed(w_text):
+            if char.isalnum():
+                break
+            if char in ['.', ',', '!', '?', ':', ';']:
+                has_punct = True
+                break
+                
+        if has_punct:
+            chunks.append(current_chunk)
+            current_chunk = []
+            current_width = 0
+
     if current_chunk:
         chunks.append(current_chunk)
 

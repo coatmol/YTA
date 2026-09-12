@@ -53,6 +53,28 @@ async def generate_audio_and_timestamps(
                         }
                     )
 
+    # Restore punctuation by aligning with the original text
+    original_tokens = text.split()
+    token_idx = 0
+    for event in word_events:
+        event_clean = ''.join(c for c in event["word"].lower() if c.isalnum())
+        if not event_clean:
+            continue
+            
+        # Search ahead up to 5 tokens to find a match
+        for offset in range(5):
+            check_idx = token_idx + offset
+            if check_idx >= len(original_tokens):
+                break
+                
+            token = original_tokens[check_idx]
+            token_clean = ''.join(c for c in token.lower() if c.isalnum())
+            
+            if event_clean == token_clean or event_clean in token_clean or token_clean in event_clean:
+                event["word"] = token
+                token_idx = check_idx + 1
+                break
+
     # Save timestamps for video rendering
     with open(json_path, "w", encoding="utf-8") as f_json:
         json.dump(word_events, f_json, indent=2, ensure_ascii=False)
