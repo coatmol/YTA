@@ -21,6 +21,8 @@ def format_script_for_shorts(title, body) -> tuple[str, str]:
     4. Censor explicit words to prevent YouTube monetization bans (e.g., replace heavy curses with mild alternatives).
     5. Hook (First 3 seconds): Start immediately with an urgent, dramatic statement or question. Never say "Reddit post" or "Today on AskReddit".
     6. Do not include scene notes, section labels like "[Hook:]", or brackets in the script.
+    7. End with a cliffhanger or a question to encourage viewers to comment.
+    8. Say "Like and Subscribe for more stories!" at the end of the script.
 
     REDDIT TITLE:
     {title}
@@ -39,16 +41,19 @@ def format_script_for_shorts(title, body) -> tuple[str, str]:
                     "type": "OBJECT",
                     "properties": {
                         "script": {"type": "STRING"},
-                        "gender": {"type": "STRING", "enum": ["male", "female", "unknown"]}
+                        "gender": {
+                            "type": "STRING",
+                            "enum": ["male", "female", "unknown"],
+                        },
                     },
-                    "required": ["script", "gender"]
-                }
-            )
+                    "required": ["script", "gender"],
+                },
+            ),
         )
 
         if not response or not response.text:
             raise Exception("Gemini API returned an empty response.")
-        
+
         data = json.loads(response.text)
         return data["script"].strip(), data["gender"]
     except Exception as e:
