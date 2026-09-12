@@ -63,12 +63,20 @@ def main():
 
         title, body = story
 
-    formatted_script, gender = inference.format_script_for_shorts(
+    formatted_script, gender, yt_title, yt_desc = inference.format_script_for_shorts(
         title, body, target_words=args.words
     )
 
     print(f"[{gender.upper()}] {formatted_script}")
-    print("\nGenerating Voiceover...")
+    print("\n--- YouTube Metadata ---")
+    print(f"Title: {yt_title}")
+    print(f"Description:\n{yt_desc}")
+    print("------------------------\n")
+    
+    with open("output/metadata.txt", "w", encoding="utf-8") as f:
+        f.write(f"Title: {yt_title}\n\nDescription:\n{yt_desc}\n")
+
+    print("Generating Voiceover...")
 
     voice = "en-US-JennyNeural" if gender == "female" else "en-US-AndrewNeural"
     tts.create_tts(formatted_script, voice=voice)

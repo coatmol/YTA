@@ -8,11 +8,12 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
 
 
-def format_script_for_shorts(title, body, target_words=200) -> tuple[str, str]:
-    """Pass Reddit text to Gemini to clean and reformat for TTS & YouTube Shorts."""
+def format_script_for_shorts(title, body, target_words=200) -> tuple[str, str, str, str]:
+    """Pass Reddit text to Gemini to clean and reformat for TTS & YouTube Shorts, generating title and description."""
     prompt = f"""
     You are a viral YouTube Shorts scriptwriter. 
     Rewrite the following Reddit post into a high-retention script optimized for Text-to-Speech (TTS).
+    Also generate a catchy YouTube Shorts video title and a description with relevant hashtags.
 
     STRICT RULES:
     1. Target length: around {target_words} words. Make it detailed, dramatic, and engaging.
@@ -45,8 +46,10 @@ def format_script_for_shorts(title, body, target_words=200) -> tuple[str, str]:
                             "type": "STRING",
                             "enum": ["male", "female", "unknown"],
                         },
+                        "youtube_title": {"type": "STRING"},
+                        "youtube_description": {"type": "STRING"},
                     },
-                    "required": ["script", "gender"],
+                    "required": ["script", "gender", "youtube_title", "youtube_description"],
                 },
             ),
         )
@@ -55,6 +58,6 @@ def format_script_for_shorts(title, body, target_words=200) -> tuple[str, str]:
             raise Exception("Gemini API returned an empty response.")
 
         data = json.loads(response.text)
-        return data["script"].strip(), data["gender"]
+        return data["script"].strip(), data["gender"], data["youtube_title"], data["youtube_description"]
     except Exception as e:
         raise Exception(f"Gemini API request failed: {e}")
