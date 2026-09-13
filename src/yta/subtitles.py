@@ -161,8 +161,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             # We shift pos_x left by 15 to balance the 30px total extra width.
             # We shift pos_y up by 96 to balance top/bottom padding against typical ink bounds.
             pos_x = current_x
-            pos_y = center_y - 100
-
+            pos_y = center_y - 102
+            
             pos_tag = f"{{\\an7\\pos({pos_x},{pos_y})}}"
 
             events.append(
