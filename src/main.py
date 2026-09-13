@@ -45,6 +45,11 @@ def main():
         default=200,
         help="Target word count for the video script (default: 200)",
     )
+    parser.add_argument(
+        "--sfx",
+        action="store_true",
+        help="Enable sound effects (reads from assets/sound)",
+    )
     args = parser.parse_args()
 
     if not args.video:
@@ -63,11 +68,24 @@ def main():
 
         title, body = story
 
-    formatted_script, gender, yt_title, yt_desc = inference.format_script_for_shorts(
-        title, body, target_words=args.words
+    available_sfx = None
+    if args.sfx:
+        available_sfx = sfx.get_available_sfx("assets/sound")
+        if available_sfx:
+            print(f"Detected {len(available_sfx)} available sound effects.")
+        else:
+            print("SFX enabled but no sound effects found in assets/sound.")
+
+    formatted_script_raw, gender, yt_title, yt_desc = inference.format_script_for_shorts(
+        title, body, target_words=args.words, use_sfx=args.sfx, available_sfx=available_sfx
     )
 
-    print(f"[{gender.upper()}] {formatted_script}")
+    clean_script, sfx_events_raw = sfx.parse_script_for_sfx(formatted_script_raw)
+
+    print(f"[{gender.upper()}] {clean_script}")
+    if sfx_events_raw:
+        print(f"\n[SFX Detected]: {', '.join([e['name'] for e in sfx_events_raw])}")
+
     print("\n--- YouTube Metadata ---")
     print(f"Title: {yt_title}")
     print(f"Description:\n{yt_desc}")
@@ -79,19 +97,24 @@ def main():
     print("Generating Voiceover...")
 
     voice = "en-US-JennyNeural" if gender == "female" else "en-US-AndrewNeural"
-    tts.create_tts(formatted_script, voice=voice)
+    tts.create_tts(clean_script, voice=voice)
 
     print("\nGenerating Subtitles...")
     sub_path = "output/subtitles.ass"
     subtitles.generate_ass(tts.JSON_OUTPUT, sub_path)
 
     if args.video:
+        resolved_sfx = sfx.resolve_sfx_timestamps(sfx_events_raw, tts.JSON_OUTPUT)
+        if resolved_sfx:
+            print(f"Found {len(resolved_sfx)} sound effects to mix in.")
+            
         print("\nProcessing Video...")
         video.create_short_video(
             input_video_path=args.video,
             audio_path=tts.AUDIO_OUTPUT,
             bgm_path=args.bgm,
             subtitles_path=sub_path,
+            sfx_events=resolved_sfx,
             output_path="output/final_short.mp4",
         )
 
