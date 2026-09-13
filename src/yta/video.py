@@ -58,7 +58,7 @@ def create_short_video(
     # 3. Subtitles
     if subtitles_path:
         sub_path_escaped = subtitles_path.replace("\\", "/")
-        filter_complex_parts.append(f"{current_v}ass='{sub_path_escaped}'[with_subs]")
+        filter_complex_parts.append(f"{current_v}ass='{sub_path_escaped}':fontsdir='assets/fonts'[with_subs]")
         current_v = "[with_subs]"
 
     # 4. SFX VHS Glitch

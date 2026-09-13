@@ -26,8 +26,10 @@ def generate_ass(word_timestamps_path: str, output_ass_path: str):
         words = json.load(f)
 
     font_size = 130
-
-    font = ImageFont.load_default()
+    try:
+        font = ImageFont.truetype("assets/fonts/impact.ttf", font_size)
+    except IOError:
+        font = ImageFont.load_default()
 
     # PIL calculates widths based on Em size, but libass scales the font
     # so that the Ascent + Descent exactly matches the given FontSize.
