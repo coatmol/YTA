@@ -10,12 +10,13 @@ def create_short_video(
     bgm_path: str | None = None,
     subtitles_path: str | None = None,
     sfx_events: list[dict] | None = None,
+    character_events: list[dict] | None = None,
     output_path: str = "final_short.mp4",
 ):
     """
     Crops the input video to a 9:16 aspect ratio (centered), replaces
     its audio with the given TTS audio file, and burns in ASS subtitles.
-    Optionally mixes in background music.
+    Optionally mixes in background music and character overlays.
     """
     if not os.path.exists(input_video_path):
         raise FileNotFoundError(f"Input video not found: {input_video_path}")
@@ -28,7 +29,7 @@ def create_short_video(
 
     print(f"Processing video: {input_video_path}...")
     print(
-        "Cropping to 9:16, burning subtitles, and merging audio (this may take a moment)..."
+        "Cropping to 9:16, burning subtitles, adding overlays, and merging audio (this may take a moment)..."
     )
 
     ffmpeg_command = [
@@ -40,7 +41,25 @@ def create_short_video(
         audio_path,
     ]
 
+    input_idx = 2
     filter_complex_parts = []
+
+    # Map character to file paths and track their input index
+    char_images = {
+        "Stewie": "assets/images/stewie.png",
+        "Peter": "assets/images/peter.png"
+    }
+    char_input_map = {}
+
+    if character_events:
+        active_chars = {event["character"] for event in character_events}
+        for char in active_chars:
+            if char in char_images and os.path.exists(char_images[char]):
+                ffmpeg_command.extend(["-i", char_images[char]])
+                # scale image to a reasonable size, e.g. 400x400 max
+                filter_complex_parts.append(f"[{input_idx}:v]scale=400:-1[img_{char}]")
+                char_input_map[char] = f"[img_{char}]"
+                input_idx += 1
 
     # 1. Base video: crop to 9:16
     filter_complex_parts.append("[0:v]crop=ih*(9/16):ih[cropped]")
@@ -55,25 +74,28 @@ def create_short_video(
 
     current_v = "[focused]"
 
-    # 3. Subtitles
+    # 3. Add Character Images
+    if character_events and char_input_map:
+        for char_name, img_stream in char_input_map.items():
+            # Find all intervals where this character speaks
+            intervals = []
+            for event in character_events:
+                if event["character"] == char_name:
+                    intervals.append(f"between(t,{event['start']},{event['end']})")
+            
+            if intervals:
+                enable_str = "+".join(intervals)
+                next_v = f"[v_overlay_{char_name}]"
+                filter_complex_parts.append(
+                    f"{current_v}{img_stream}overlay=20:H-h-20:enable='{enable_str}'{next_v}"
+                )
+                current_v = next_v
+
+    # 4. Subtitles
     if subtitles_path:
         sub_path_escaped = subtitles_path.replace("\\", "/")
         filter_complex_parts.append(f"{current_v}ass='{sub_path_escaped}':fontsdir='assets/fonts'[with_subs]")
         current_v = "[with_subs]"
-
-    # 4. SFX VHS Glitch
-    if sfx_events:
-        enable_conditions = []
-        for sfx in sfx_events:
-            start_t = sfx["time"]
-            end_t = start_t + 0.3  # Glitch duration: 300ms
-            enable_conditions.append(f"between(t,{start_t},{end_t})")
-
-        if enable_conditions:
-            cond_str = "+".join(enable_conditions)
-            glitch_filters = f"rgbashift=rh=30:bv=-30:enable='{cond_str}',noise=alls=60:allf=t+u:enable='{cond_str}'"
-            filter_complex_parts.append(f"{current_v}{glitch_filters}[with_glitch]")
-            current_v = "[with_glitch]"
 
     # Guarantee pixel format and set final video tag
     filter_complex_parts.append(f"{current_v}format=yuv420p[v]")
@@ -82,25 +104,12 @@ def create_short_video(
     audio_inputs = []
     mix_elements = ["[1:a]"]
 
-    input_idx = 2
-
     if bgm_path:
         # Loop the BGM indefinitely, we'll cut it off when the TTS audio ends
         ffmpeg_command.extend(["-stream_loop", "-1", "-i", bgm_path])
         filter_complex_parts.append(f"[{input_idx}:a]volume={BGM_VOLUME}[bgm]")
         mix_elements.append("[bgm]")
         input_idx += 1
-
-    if sfx_events:
-        for i, sfx in enumerate(sfx_events):
-            ffmpeg_command.extend(["-i", sfx["file_path"]])
-            delay_ms = int(sfx["time"] * 1000)
-            # Use adelay filter. all=1 applies the delay to all channels.
-            filter_complex_parts.append(
-                f"[{input_idx}:a]adelay={delay_ms}|{delay_ms}[sfx{i}]"
-            )
-            mix_elements.append(f"[sfx{i}]")
-            input_idx += 1
 
     if len(mix_elements) > 1:
         mix_str = (

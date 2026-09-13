@@ -1,6 +1,14 @@
 import asyncio
 import json
 import edge_tts
+import torch
+
+_original_load = torch.load
+def _patched_load(*args, **kwargs):
+    kwargs["weights_only"] = False
+    return _original_load(*args, **kwargs)
+torch.load = _patched_load
+
 
 
 async def generate_audio_and_timestamps(
@@ -83,6 +91,31 @@ async def generate_audio_and_timestamps(
 
     print(f"Successfully created {audio_path}")
     print(f"Saved {len(word_events)} word timestamps to {json_path}")
+
+def apply_rvc(
+    input_audio: str,
+    output_audio: str,
+    model_path: str,
+    device: str = "cuda:0"
+):
+    from rvc_python.infer import RVCInference
+    print(f"Applying RVC with model {model_path} on {input_audio}...")
+    rvc = RVCInference(
+        device=device,
+        model_path=model_path,
+        version="v2"
+    )
+    rvc.set_params(
+        f0method="rmvpe",
+        f0up_key=0,
+        index_rate=0.66,
+        filter_radius=3,
+        resample_sr=0,
+        rms_mix_rate=1,
+        protect=0.33
+    )
+    rvc.infer_file(input_audio, output_audio)
+    print(f"RVC output saved to {output_audio}")
 
 
 def create_tts(

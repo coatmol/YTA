@@ -6,13 +6,17 @@ readme = "README.md"
 authors = [
     { name = "Coatmol", email = "omarelgoh08@gmail.com" }
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.10,<3.11"
 dependencies = [
     "edge-tts>=7.2.8",
     "google-genai>=2.23.0",
     "pillow>=12.3.0",
-    "praw>=8.0.3",
+    "praw>=7.7.1",
+    "pydub>=0.25.1",
     "python-dotenv>=1.2.3",
+    "rvc-python",
+    "torch",
+    "torchaudio",
 ]
 
 [project.scripts]
@@ -21,3 +25,12 @@ yta = "yta:main"
 [build-system]
 requires = ["uv_build>=0.12.13,<0.13.0"]
 build-backend = "uv_build"
+
+[[tool.uv.index]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch" }
+torchaudio = { index = "pytorch" }
