@@ -1,3 +1,6 @@
+from datetime import datetime
+from pathlib import Path
+
 import dotenv
 import warnings
 import logging
@@ -51,6 +54,7 @@ def main():
         help="Enable sound effects (reads from assets/sound)",
     )
     args = parser.parse_args()
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     if not args.video:
         parser.print_help()
@@ -68,6 +72,8 @@ def main():
 
         title, body = story
 
+    Path(f"output/{timestamp}").mkdir(parents=True, exist_ok=True)
+
     available_sfx = None
     if args.sfx:
         available_sfx = sfx.get_available_sfx("assets/sound")
@@ -76,9 +82,21 @@ def main():
         else:
             print("SFX enabled but no sound effects found in assets/sound.")
 
-    formatted_script_raw, gender, yt_title, yt_desc = inference.format_script_for_shorts(
-        title, body, target_words=args.words, use_sfx=args.sfx, available_sfx=available_sfx
+    formatted_script_raw, gender, yt_title, yt_desc = (
+        inference.format_script_for_shorts(
+            title,
+            body,
+            target_words=args.words,
+            use_sfx=args.sfx,
+            available_sfx=available_sfx,
+        )
     )
+
+    import re
+    part_match = re.search(r'(?i)\b(part\s*\d+|update\s*\d*)\b', title)
+    if part_match:
+        prefix = part_match.group(1).title()
+        formatted_script_raw = f"{prefix}. {formatted_script_raw}"
 
     clean_script, sfx_events_raw = sfx.parse_script_for_sfx(formatted_script_raw)
 
@@ -90,32 +108,39 @@ def main():
     print(f"Title: {yt_title}")
     print(f"Description:\n{yt_desc}")
     print("------------------------\n")
-    
-    with open("output/metadata.txt", "w", encoding="utf-8") as f:
+
+    with open(f"output/{timestamp}/metadata.txt", "w", encoding="utf-8") as f:
         f.write(f"Title: {yt_title}\n\nDescription:\n{yt_desc}\n")
 
     print("Generating Voiceover...")
 
     voice = "en-US-JennyNeural" if gender == "female" else "en-US-AndrewNeural"
-    tts.create_tts(clean_script, voice=voice)
+    tts.create_tts(
+        clean_script,
+        audio_path=f"output/{timestamp}/voiceover.mp3",
+        json_path=f"output/{timestamp}/word_timestamps.json",
+        voice=voice,
+    )
 
     print("\nGenerating Subtitles...")
-    sub_path = "output/subtitles.ass"
-    subtitles.generate_ass(tts.JSON_OUTPUT, sub_path)
+    sub_path = f"output/{timestamp}/subtitles.ass"
+    subtitles.generate_ass(f"output/{timestamp}/word_timestamps.json", sub_path)
 
     if args.video:
-        resolved_sfx = sfx.resolve_sfx_timestamps(sfx_events_raw, tts.JSON_OUTPUT)
+        resolved_sfx = sfx.resolve_sfx_timestamps(
+            sfx_events_raw, f"output/{timestamp}/word_timestamps.json"
+        )
         if resolved_sfx:
             print(f"Found {len(resolved_sfx)} sound effects to mix in.")
-            
+
         print("\nProcessing Video...")
         video.create_short_video(
             input_video_path=args.video,
-            audio_path=tts.AUDIO_OUTPUT,
+            audio_path=f"output/{timestamp}/voiceover.mp3",
             bgm_path=args.bgm,
             subtitles_path=sub_path,
             sfx_events=resolved_sfx,
-            output_path="output/final_short.mp4",
+            output_path=f"output/{timestamp}/final_short.mp4",
         )
 
 

@@ -2,9 +2,6 @@ import asyncio
 import json
 import edge_tts
 
-AUDIO_OUTPUT = "output/voiceover.mp3"
-JSON_OUTPUT = "output/word_timestamps.json"
-
 
 async def generate_audio_and_timestamps(
     text: str, voice: str, audio_path: str, json_path: str
@@ -19,6 +16,7 @@ async def generate_audio_and_timestamps(
 
     # Ensure output directories exist
     import os
+
     os.makedirs(os.path.dirname(audio_path), exist_ok=True)
     if os.path.dirname(json_path):
         os.makedirs(os.path.dirname(json_path), exist_ok=True)
@@ -57,20 +55,24 @@ async def generate_audio_and_timestamps(
     original_tokens = text.split()
     token_idx = 0
     for event in word_events:
-        event_clean = ''.join(c for c in event["word"].lower() if c.isalnum())
+        event_clean = "".join(c for c in event["word"].lower() if c.isalnum())
         if not event_clean:
             continue
-            
+
         # Search ahead up to 5 tokens to find a match
         for offset in range(5):
             check_idx = token_idx + offset
             if check_idx >= len(original_tokens):
                 break
-                
+
             token = original_tokens[check_idx]
-            token_clean = ''.join(c for c in token.lower() if c.isalnum())
-            
-            if event_clean == token_clean or event_clean in token_clean or token_clean in event_clean:
+            token_clean = "".join(c for c in token.lower() if c.isalnum())
+
+            if (
+                event_clean == token_clean
+                or event_clean in token_clean
+                or token_clean in event_clean
+            ):
                 event["word"] = token
                 token_idx = check_idx + 1
                 break
@@ -85,9 +87,9 @@ async def generate_audio_and_timestamps(
 
 def create_tts(
     text: str,
+    audio_path: str,
+    json_path: str,
     voice: str = "en-US-AndrewNeural",
-    audio_path: str = AUDIO_OUTPUT,
-    json_path: str = JSON_OUTPUT,
 ):
     """Synchronous wrapper to generate audio and timestamps."""
     asyncio.run(generate_audio_and_timestamps(text, voice, audio_path, json_path))
