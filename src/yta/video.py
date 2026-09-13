@@ -31,7 +31,7 @@ def create_short_video(
         "Cropping to 9:16, burning subtitles, and merging audio (this may take a moment)..."
     )
 
-    cmd = [
+    ffmpeg_command = [
         "ffmpeg",
         "-y",  # overwrite output
         "-i",
@@ -86,14 +86,14 @@ def create_short_video(
 
     if bgm_path:
         # Loop the BGM indefinitely, we'll cut it off when the TTS audio ends
-        cmd.extend(["-stream_loop", "-1", "-i", bgm_path])
+        ffmpeg_command.extend(["-stream_loop", "-1", "-i", bgm_path])
         filter_complex_parts.append(f"[{input_idx}:a]volume={BGM_VOLUME}[bgm]")
         mix_elements.append("[bgm]")
         input_idx += 1
 
     if sfx_events:
         for i, sfx in enumerate(sfx_events):
-            cmd.extend(["-i", sfx["file_path"]])
+            ffmpeg_command.extend(["-i", sfx["file_path"]])
             delay_ms = int(sfx["time"] * 1000)
             # Use adelay filter. all=1 applies the delay to all channels.
             filter_complex_parts.append(
@@ -115,9 +115,9 @@ def create_short_video(
 
     filter_complex = ";".join(filter_complex_parts)
 
-    cmd.extend(["-filter_complex", filter_complex, "-map", "[v]", "-map", audio_map])
+    ffmpeg_command.extend(["-filter_complex", filter_complex, "-map", "[v]", "-map", audio_map])
 
-    cmd.extend(
+    ffmpeg_command.extend(
         [
             "-c:v",
             "libx264",
@@ -136,7 +136,7 @@ def create_short_video(
 
     try:
         subprocess.run(
-            cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            ffmpeg_command, check=True, stdout=subprocess.DEVNULL
         )
         print(f"Successfully created final video: {output_path}")
     except subprocess.CalledProcessError as e:
