@@ -9,7 +9,7 @@ def create_short_video(
     audio_path: str,
     bgm_path: str | None = None,
     subtitles_path: str | None = None,
-    sfx_events: list[dict] = None,
+    sfx_events: list[dict] | None = None,
     output_path: str = "final_short.mp4",
 ):
     """
@@ -40,35 +40,48 @@ def create_short_video(
         audio_path,
     ]
 
-    # Base video filter: crop to 9:16
-    v_filter = "crop=ih*(9/16):ih"
+    filter_complex_parts = []
 
-    # If subtitles are provided, burn them in after cropping
+    # 1. Base video: crop to 9:16
+    filter_complex_parts.append("[0:v]crop=ih*(9/16):ih[cropped]")
+
+    # 2. Focus pull effect (1 second)
+    filter_complex_parts.append("[cropped]split[sharp][for_blur]")
+    filter_complex_parts.append("[for_blur]boxblur=10:10[blurred]")
+    # Blend sharp (A) and blurred (B). At T=0, B is 100%. At T=1, A is 100%.
+    filter_complex_parts.append(
+        "[sharp][blurred]blend=all_expr='A*T + B*(1-T)':enable='between(t,0,1)'[focused]"
+    )
+
+    current_v = "[focused]"
+
+    # 3. Subtitles
     if subtitles_path:
-        # We must escape backslashes and colons in the path for ffmpeg filter syntax
-        # Using forward slashes is safer for ffmpeg paths on Windows
         sub_path_escaped = subtitles_path.replace("\\", "/")
-        v_filter += f",ass='{sub_path_escaped}'"
+        filter_complex_parts.append(f"{current_v}ass='{sub_path_escaped}'[with_subs]")
+        current_v = "[with_subs]"
 
-    # Add VHS glitch visual effect synced with sound effects
+    # 4. SFX VHS Glitch
     if sfx_events:
         enable_conditions = []
         for sfx in sfx_events:
             start_t = sfx["time"]
             end_t = start_t + 0.3  # Glitch duration: 300ms
             enable_conditions.append(f"between(t,{start_t},{end_t})")
-            
+
         if enable_conditions:
             cond_str = "+".join(enable_conditions)
-            # rgbashift separates red/blue for chromatic aberration, noise adds static grain
-            v_filter += f",rgbashift=rh=30:bv=-30:enable='{cond_str}'"
-            v_filter += f",noise=alls=60:allf=t+u:enable='{cond_str}'"
+            glitch_filters = f"rgbashift=rh=30:bv=-30:enable='{cond_str}',noise=alls=60:allf=t+u:enable='{cond_str}'"
+            filter_complex_parts.append(f"{current_v}{glitch_filters}[with_glitch]")
+            current_v = "[with_glitch]"
+
+    # Guarantee pixel format and set final video tag
+    filter_complex_parts.append(f"{current_v}format=yuv420p[v]")
 
     # Handle audio inputs and mixing
     audio_inputs = []
-    filter_complex_parts = [f"[0:v]{v_filter}[v]"]
     mix_elements = ["[1:a]"]
-    
+
     input_idx = 2
 
     if bgm_path:
@@ -77,33 +90,32 @@ def create_short_video(
         filter_complex_parts.append(f"[{input_idx}:a]volume={BGM_VOLUME}[bgm]")
         mix_elements.append("[bgm]")
         input_idx += 1
-        
+
     if sfx_events:
         for i, sfx in enumerate(sfx_events):
             cmd.extend(["-i", sfx["file_path"]])
             delay_ms = int(sfx["time"] * 1000)
             # Use adelay filter. all=1 applies the delay to all channels.
-            filter_complex_parts.append(f"[{input_idx}:a]adelay={delay_ms}|{delay_ms}[sfx{i}]")
+            filter_complex_parts.append(
+                f"[{input_idx}:a]adelay={delay_ms}|{delay_ms}[sfx{i}]"
+            )
             mix_elements.append(f"[sfx{i}]")
             input_idx += 1
 
     if len(mix_elements) > 1:
-        mix_str = "".join(mix_elements) + f"amix=inputs={len(mix_elements)}:duration=first:normalize=0[a]"
+        mix_str = (
+            "".join(mix_elements)
+            + f"amix=inputs={len(mix_elements)}:duration=first:normalize=0[a]"
+        )
         filter_complex_parts.append(mix_str)
-        filter_complex = ";".join(filter_complex_parts)
-        
-        cmd.extend([
-            "-filter_complex", filter_complex,
-            "-map", "[v]",
-            "-map", "[a]"
-        ])
+        audio_map = "[a]"
     else:
-        # No BGM and No SFX
-        cmd.extend([
-            "-filter:v", v_filter,
-            "-map", "0:v:0",
-            "-map", "1:a:0"
-        ])
+        # Just map the TTS directly if no mixing is needed
+        audio_map = "1:a:0"
+
+    filter_complex = ";".join(filter_complex_parts)
+
+    cmd.extend(["-filter_complex", filter_complex, "-map", "[v]", "-map", audio_map])
 
     cmd.extend(
         [

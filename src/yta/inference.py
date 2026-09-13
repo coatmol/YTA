@@ -13,11 +13,16 @@ def format_script_for_shorts(title, body, target_words=200, use_sfx=False, avail
     
     sfx_rule = ""
     if use_sfx:
-        sfx_rule = "9. Add sound effect tags like [SFX:knock] within the script at appropriate moments to enhance the atmosphere."
+        sfx_rule = """9. (CRITICAL) SOUND EFFECT RULES:
+       - You may insert tags like [SFX:name] in the text.
+       - NEVER use a sound effect unless the literal action occurs in the sentence (e.g. only use a door creaking if a door actually opens).
+       - DO NOT attach sound effects to abstract words or thoughts like "consequence", "fear", or "suddenly".
+       - If no sound effects perfectly match the physical actions in the story, DO NOT USE ANY. Zero sound effects is better than a bad one.
+       """
         if available_sfx:
-            sfx_rule += f" You MUST ONLY use the following available sound effects: {', '.join(available_sfx)}."
+            sfx_rule += f"- You MUST ONLY choose from this exact list: {', '.join(available_sfx)}."
         else:
-            sfx_rule += " (No specific sound effects provided, use generic names)."
+            sfx_rule += "- Use generic names."
 
     prompt = f"""
     You are a viral YouTube Shorts scriptwriter. 
