@@ -30,7 +30,7 @@ def format_script_for_shorts(title, body, target_words=200, use_sfx=False, avail
     Also generate a catchy YouTube Shorts video title and a description with relevant hashtags.
 
     STRICT RULES:
-    1. Target length: around {target_words} words. Make it detailed, dramatic, and engaging.
+    1. Target length: EXACTLY {target_words} words (approx {target_words // 15} sentences). You MUST expand or summarize the story to hit this exact length. Do NOT make it shorter than {int(target_words * 0.9)} words or longer than {int(target_words * 1.1)} words. Pace the details accordingly.
     2. Expand all Reddit acronyms (e.g., AITA -> "Am I the asshole", 26M -> "26-year-old male").
     3. Strip all URLs, markdown formatting, "EDIT:" sections, and "TL;DR" tags.
     4. Censor explicit words to prevent YouTube monetization bans (e.g., replace heavy curses with mild alternatives).

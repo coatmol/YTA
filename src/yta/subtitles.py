@@ -78,10 +78,10 @@ def generate_ass(word_timestamps_path: str, output_ass_path: str):
         for char in reversed(w_text):
             if char.isalnum():
                 break
-            if char in ['.', ',', '!', '?', ':', ';']:
+            if char in [".", ",", "!", "?", ":", ";"]:
                 has_punct = True
                 break
-                
+
         if has_punct:
             chunks.append(current_chunk)
             current_chunk = []
@@ -100,8 +100,8 @@ PlayResY: 1920
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Inactive,Impact,130,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,4,0,1,0,0,500,1
-Style: ActiveBox,Impact,130,&H000000FF,&H000000FF,&H000000FF,&H000000FF,-1,0,0,0,100,100,0,0,1,8,0,7,0,0,500,1
+Style: Inactive,Impact,130,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,8,0,1,0,0,500,1
+Style: ActiveBox,Impact,130,&H000000FF,&H000000FF,&H000000FF,&H000000FF,-1,0,0,0,100,100,0,0,1,16,0,7,0,0,500,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
